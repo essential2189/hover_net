@@ -13,7 +13,7 @@ mapping = {v["Tensorflow"]: v['Pytorch'] for k, v in mapping.T.to_dict().items()
 
 # mapping
 tf_path = "" # to original tensorflow chkpt ends with .npz
-pt_path = "" # to convert pytorch chkpt ends with .tar
+pt_path = "checkpoint/hovernet_original_kumar_notype_tf2pytorch.tar" # to convert pytorch chkpt ends with .tar
 
 pt = {}
 tf = np.load(tf_path)
