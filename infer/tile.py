@@ -41,6 +41,9 @@ from skimage import color
 import convert_format
 from . import base
 
+## essential2189 edit
+import pandas as pd
+from sklearn.cluster import DBSCAN
 
 ####
 def _prepare_patching(img, window_size, mask_size, return_src_top_corner=False):
@@ -190,26 +193,33 @@ class InferManager(base.InferManager):
             if self.nr_types is None: # matlab does not have None type array
                 mat_dict.pop("inst_type", None) 
 
-            if self.save_raw_map:
-                mat_dict["raw_map"] = pred_map
-            save_path = "%s/mat/%s.mat" % (self.output_dir, img_name)
-            sio.savemat(save_path, mat_dict)
-
-            save_path = "%s/overlay/%s.png" % (self.output_dir, img_name)
-            cv2.imwrite(save_path, cv2.cvtColor(overlaid_img, cv2.COLOR_RGB2BGR))
-
-            if self.save_qupath:
-                nuc_val_list = list(inst_info_dict.values())
-                nuc_type_list = np.array([v["type"] for v in nuc_val_list])
-                nuc_coms_list = np.array([v["centroid"] for v in nuc_val_list])
-                save_path = "%s/qupath/%s.tsv" % (self.output_dir, img_name)
-                convert_format.to_qupath(
-                    save_path, nuc_coms_list, nuc_type_list, self.type_info_dict
-                )
-
-            save_path = "%s/json/%s.json" % (self.output_dir, img_name)
-            self.__save_json(save_path, inst_info_dict, None)
-            return img_name
+            ## essential2189 edit
+            mat_file_value = pd.DataFrame(mat_dict['inst_centroid'])
+            model = DBSCAN(eps=45, min_samples=6)
+            predict = pd.DataFrame(model.fit_predict(mat_file_value))
+            predict_list = predict.values.tolist()
+            predict_list_1d = sum(predict_list, [])
+            if len(list(set(predict_list_1d))) > 1 :
+                if self.save_raw_map:
+                    mat_dict["raw_map"] = pred_map
+                save_path = "%s/mat/%s.mat" % (self.output_dir, img_name)
+                sio.savemat(save_path, mat_dict)
+    
+                save_path = "%s/overlay/%s.png" % (self.output_dir, img_name)
+                cv2.imwrite(save_path, cv2.cvtColor(overlaid_img, cv2.COLOR_RGB2BGR))
+    
+                if self.save_qupath:
+                    nuc_val_list = list(inst_info_dict.values())
+                    nuc_type_list = np.array([v["type"] for v in nuc_val_list])
+                    nuc_coms_list = np.array([v["centroid"] for v in nuc_val_list])
+                    save_path = "%s/qupath/%s.tsv" % (self.output_dir, img_name)
+                    convert_format.to_qupath(
+                        save_path, nuc_coms_list, nuc_type_list, self.type_info_dict
+                    )
+    
+                save_path = "%s/json/%s.json" % (self.output_dir, img_name)
+                self.__save_json(save_path, inst_info_dict, None)
+                return img_name
 
         def detach_items_of_uid(items_list, uid, nr_expected_items):
             item_counter = 0
