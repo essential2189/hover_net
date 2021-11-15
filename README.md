@@ -1,4 +1,5 @@
-## Run with my essential Colab Nootbook [`hover_net.ipynb`](https://github.com/essential2189/hover_net/blob/master/hover_net.ipynb).
+# This repository is a <code> referenced to develop a prototype model in a bio project conducted by SecuLayer Corp. I used this code for cell segmentation and conducted anomaly detection(outlier detection) using DBSCAN.
+## Run the essential code with my Colab Nootbook [`hover_net.ipynb`](https://github.com/essential2189/hover_net/blob/master/hover_net.ipynb).
 ### The commit message "hover_net" is an object that I modified.
 
 ------------------------------------------
