@@ -204,7 +204,7 @@ class InferManager(base.InferManager):
 
             ## essential2189 edit
             mat_file_value = pd.DataFrame(mat_dict['inst_centroid'])
-            model = DBSCAN(eps=60, min_samples=15)
+            model = DBSCAN(eps=45, min_samples=10)
             predict = pd.DataFrame(model.fit_predict(mat_file_value))
             predict_list = predict.values.tolist()
             predict_list_1d = sum(predict_list, [])
@@ -232,8 +232,7 @@ class InferManager(base.InferManager):
                 save_path = "%s/dbscan/%s.png" % (self.output_dir, img_name)
                 predict.columns = ['predict']
                 r = pd.concat([mat_file_value, predict], axis=1)
-                sns_plot = sns.pairplot(r, hue='predict', size=6, kind='scatter', diag_kind='hist')
-                plt.tight_layout()
+                sns.pairplot(r, hue='predict', size=6, kind='scatter', diag_kind='hist')
                 plt.savefig(save_path)
 
                 return img_name
