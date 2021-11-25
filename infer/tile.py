@@ -175,7 +175,11 @@ class InferManager(base.InferManager):
         rm_n_mkdir(self.output_dir + '/json/')
         rm_n_mkdir(self.output_dir + '/mat/')
         rm_n_mkdir(self.output_dir + '/overlay/')
-        rm_n_mkdir(self.output_dir + '/dbscan/')
+
+        rm_n_mkdir(self.output_dir + '/a_json/')
+        rm_n_mkdir(self.output_dir + '/a_mat/')
+        rm_n_mkdir(self.output_dir + '/a_overlay/')
+        rm_n_mkdir(self.output_dir + '/a_dbscan/')
         if self.save_qupath:
             rm_n_mkdir(self.output_dir + "/qupath/")
 
@@ -199,16 +203,64 @@ class InferManager(base.InferManager):
                 "inst_type": nuc_type_list,
                 "inst_centroid": nuc_coms_list
             }
-            if self.nr_types is None:  # matlab does not have None type array
-                mat_dict.pop("inst_type", None)
-
             ## essential2189 edit
-            mat_file_value = pd.DataFrame(mat_dict['inst_centroid'])
-            model = DBSCAN(eps=45, min_samples=10)
-            predict = pd.DataFrame(model.fit_predict(mat_file_value))
-            predict_list = predict.values.tolist()
-            predict_list_1d = sum(predict_list, [])
-            if len(list(set(predict_list_1d))) > 1:
+            # if self.nr_types is None:  # matlab does not have None type array
+            #     mat_dict.pop("inst_type", None)
+
+            try:
+                if self.nr_types is None:
+                    mat_dict.pop("inst_type", None)
+                    mat_file_value = mat_dict['inst_centroid']
+                else:
+                    mat_file_centroid = mat_dict['inst_centroid']
+                    mat_file_type = mat_dict['inst_type']
+                    mat_file_value = []
+                    mat_file_map = np.c_[mat_file_type, mat_file_centroid]
+
+                    for i in range(len(mat_file_type)):
+                        if mat_file_map[:, 0][i] == 2:
+                            mat_file_value.append(mat_file_centroid[i].tolist())
+
+                    mat_file_value = np.asarray(mat_file_value)
+
+                mat_file_value = pd.DataFrame(mat_file_value)
+                model = DBSCAN(eps=35, min_samples=4)
+                predict = pd.DataFrame(model.fit_predict(mat_file_value))
+                predict_list = predict.values.tolist()
+                predict_list_1d = sum(predict_list, [])
+                len_predict = len(list(set(predict_list_1d)))
+                if len_predict > 1 and len_predict < 5:
+                    if self.save_raw_map:
+                        mat_dict["raw_map"] = pred_map
+                    save_path = "%s/a_mat/%s.mat" % (self.output_dir, img_name)
+                    sio.savemat(save_path, mat_dict)
+
+                    save_path = "%s/a_overlay/%s.png" % (self.output_dir, img_name)
+                    cv2.imwrite(save_path, cv2.cvtColor(overlaid_img, cv2.COLOR_RGB2BGR))
+
+                    if self.save_qupath:
+                        nuc_val_list = list(inst_info_dict.values())
+                        nuc_type_list = np.array([v["type"] for v in nuc_val_list])
+                        nuc_coms_list = np.array([v["centroid"] for v in nuc_val_list])
+                        save_path = "%s/qupath/%s.tsv" % (self.output_dir, img_name)
+                        convert_format.to_qupath(
+                            save_path, nuc_coms_list, nuc_type_list, self.type_info_dict
+                        )
+
+                    save_path = "%s/a_json/%s.json" % (self.output_dir, img_name)
+                    self.__save_json(save_path, inst_info_dict, None)
+
+                    save_path = "%s/a_dbscan/%s.png" % (self.output_dir, img_name)
+                    predict.columns = ['predict']
+                    r = pd.concat([mat_file_value, predict], axis=1)
+                    sns.pairplot(r, hue='predict', size=6, kind='scatter', diag_kind='hist')
+                    plt.savefig(save_path)
+
+                    return img_name
+            except:
+                if self.nr_types is None:
+                    mat_dict.pop("inst_type", None)
+
                 if self.save_raw_map:
                     mat_dict["raw_map"] = pred_map
                 save_path = "%s/mat/%s.mat" % (self.output_dir, img_name)
@@ -228,12 +280,6 @@ class InferManager(base.InferManager):
 
                 save_path = "%s/json/%s.json" % (self.output_dir, img_name)
                 self.__save_json(save_path, inst_info_dict, None)
-
-                save_path = "%s/dbscan/%s.png" % (self.output_dir, img_name)
-                predict.columns = ['predict']
-                r = pd.concat([mat_file_value, predict], axis=1)
-                sns.pairplot(r, hue='predict', size=6, kind='scatter', diag_kind='hist')
-                plt.savefig(save_path)
 
                 return img_name
 
