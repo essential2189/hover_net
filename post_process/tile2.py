@@ -1,9 +1,9 @@
 import logging
-import multiprocessing
-from multiprocessing import Lock, Pool
+# import multiprocessing
+# from multiprocessing import Lock, Pool
+# multiprocessing.set_start_method("spawn", True)  # ! must be at top for VScode debugging
 
-#multiprocessing.set_start_method("spawn", True)  # ! must be at top for VScode debugging
-
+## essential2189 edit
 import torch.multiprocessing
 
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -46,6 +46,15 @@ from skimage import color
 import convert_format
 from . import base
 
+## essential2189 edit
+import pandas as pd
+from sklearn.cluster import DBSCAN
+import seaborn as sns
+import matplotlib.pyplot as plt
+from . import anomaly_detection
+
+
+# import heat_map
 
 ####
 def _prepare_patching(img, window_size, mask_size, return_src_top_corner=False):
@@ -111,6 +120,7 @@ def _post_process_patches(
         patch_info: patch data and associated information
         image_info: input image data and associated information
         overlay_kwargs: overlay keyword arguments
+
     """
     # re-assemble the prediction, sort according to the patch location within the original image
     patch_info = sorted(patch_info, key=lambda x: [x[0][0], x[0][1]])
@@ -144,7 +154,7 @@ def _post_process_patches(
         src_image.copy(), inst_info_dict, **overlay_kwargs
     )
 
-    return image_info["name"], pred_map, pred_inst, inst_info_dict, overlaid_img
+    return image_info["name"], pred_map, pred_inst, inst_info_dict, overlaid_img, src_image.copy()
 
 
 class InferManager(base.InferManager):
@@ -168,6 +178,14 @@ class InferManager(base.InferManager):
         rm_n_mkdir(self.output_dir + '/json/')
         rm_n_mkdir(self.output_dir + '/mat/')
         rm_n_mkdir(self.output_dir + '/overlay/')
+        rm_n_mkdir(self.output_dir + '/dbscan/')
+
+        rm_n_mkdir(self.output_dir + '/a_json/')
+        rm_n_mkdir(self.output_dir + '/a_mat/')
+        rm_n_mkdir(self.output_dir + '/a_overlay/')
+        rm_n_mkdir(self.output_dir + '/a_dbscan/')
+        # rm_n_mkdir(self.output_dir + '/heat_map/')
+
         if self.save_qupath:
             rm_n_mkdir(self.output_dir + "/qupath/")
 
@@ -175,8 +193,9 @@ class InferManager(base.InferManager):
             """Post processing callback.
 
             Output format is implicit assumption, taken from `_post_process_patches`
+
             """
-            img_name, pred_map, pred_inst, inst_info_dict, overlaid_img = results
+            img_name, pred_map, pred_inst, inst_info_dict, overlaid_img, srcimage = results
 
             nuc_val_list = list(inst_info_dict.values())
             # need singleton to make matlab happy
@@ -190,30 +209,131 @@ class InferManager(base.InferManager):
                 "inst_type": nuc_type_list,
                 "inst_centroid": nuc_coms_list
             }
-            if self.nr_types is None:  # matlab does not have None type array
-                mat_dict.pop("inst_type", None)
 
-            if self.save_raw_map:
-                mat_dict["raw_map"] = pred_map
-            save_path = "%s/mat/%s.mat" % (self.output_dir, img_name)
-            sio.savemat(save_path, mat_dict)
+            ## essential2189 edit
+            # if self.nr_types is None:  # matlab does not have None type array
+            #     mat_dict.pop("inst_type", None)
 
-            save_path = "%s/overlay/%s.png" % (self.output_dir, img_name)
-            cv2.imwrite(save_path, cv2.cvtColor(overlaid_img, cv2.COLOR_RGB2BGR))
+            try:
+                if self.nr_types is None:
+                    mat_dict.pop("inst_type", None)
 
-            if self.save_qupath:
-                nuc_val_list = list(inst_info_dict.values())
-                nuc_type_list = np.array([v["type"] for v in nuc_val_list])
-                nuc_coms_list = np.array([v["centroid"] for v in nuc_val_list])
-                save_path = "%s/qupath/%s.tsv" % (self.output_dir, img_name)
-                convert_format.to_qupath(
-                    save_path, nuc_coms_list, nuc_type_list, self.type_info_dict
-                )
+                    mat_file_value = mat_dict['inst_centroid']
+                    r, len_predict = anomaly_detection.dbscan_kumar(mat_file_value)
 
-            save_path = "%s/json/%s.json" % (self.output_dir, img_name)
-            self.__save_json(save_path, inst_info_dict, None)
+                    if len_predict > 1:
+                        if self.save_raw_map:
+                            mat_dict["raw_map"] = pred_map
+                        save_path = "%s/a_mat/%s.mat" % (self.output_dir, img_name)
+                        sio.savemat(save_path, mat_dict)
 
-            return img_name
+                        save_path = "%s/a_overlay/%s.png" % (self.output_dir, img_name)
+                        cv2.imwrite(save_path, cv2.cvtColor(overlaid_img, cv2.COLOR_RGB2BGR))
+
+                        if self.save_qupath:
+                            nuc_val_list = list(inst_info_dict.values())
+                            nuc_type_list = np.array([v["type"] for v in nuc_val_list])
+                            nuc_coms_list = np.array([v["centroid"] for v in nuc_val_list])
+                            save_path = "%s/qupath/%s.tsv" % (self.output_dir, img_name)
+                            convert_format.to_qupath(
+                                save_path, nuc_coms_list, nuc_type_list, self.type_info_dict
+                            )
+
+                        save_path = "%s/a_json/%s.json" % (self.output_dir, img_name)
+                        self.__save_json(save_path, inst_info_dict, None)
+
+                        save_path = "%s/a_dbscan/%s.png" % (self.output_dir, img_name)
+                        sns.pairplot(r, hue='predict', size=6, kind='scatter', diag_kind='hist')
+                        plt.savefig(save_path)
+
+                        save_path = "%s/a_dbscan/%s.csv" % (self.output_dir, img_name)
+                        r.to_csv(save_path, mode='w')
+
+                        return img_name
+
+                    else:
+                        return 'NONE ' + img_name
+
+                else:
+                    mat_file_value = mat_dict['inst_centroid']
+                    mat_file_type = mat_dict['inst_type']
+                    red, green, blue, mat_file_value_green, mat_file_red, mat_file_blue = anomaly_detection.cell_by_color(mat_file_value, mat_file_type)
+
+                    g, len_predict_green = anomaly_detection.dbscan_green(mat_file_value_green)
+                    r, len_predict_red = anomaly_detection.dbscan_red(mat_file_red)
+                    #b, len_predict_blue = anomaly_detection.dbscan(mat_file_blue)
+
+                    # save_path = "%s/heat_map/%s.png" % (self.output_dir, img_name)
+                    # heat_map.heat_map(srcimage, mat_file_value_green, save_path)
+
+                    if len_predict_green > 1 or len_predict_red > 1:
+                        if self.save_raw_map:
+                            mat_dict["raw_map"] = pred_map
+                        save_path = "%s/mat/%s.mat" % (self.output_dir, img_name)
+                        sio.savemat(save_path, mat_dict)
+
+                        save_path = "%s/overlay/%s.png" % (self.output_dir, img_name)
+                        cv2.imwrite(save_path, cv2.cvtColor(overlaid_img, cv2.COLOR_RGB2BGR))
+
+                        if self.save_qupath:
+                            nuc_val_list = list(inst_info_dict.values())
+                            nuc_type_list = np.array([v["type"] for v in nuc_val_list])
+                            nuc_coms_list = np.array([v["centroid"] for v in nuc_val_list])
+                            save_path = "%s/qupath/%s.tsv" % (self.output_dir, img_name)
+                            convert_format.to_qupath(
+                                save_path, nuc_coms_list, nuc_type_list, self.type_info_dict
+                            )
+
+                        save_path = "%s/json/%s.json" % (self.output_dir, img_name)
+                        self.__save_json(save_path, inst_info_dict, None)
+
+                        save_path = "%s/dbscan/%s.png" % (self.output_dir, img_name)
+                        sns.pairplot(r, hue='predict', size=6, kind='scatter', diag_kind='hist')
+                        plt.savefig(save_path)
+
+                        save_path = "%s/dbscan/%s.csv" % (self.output_dir, img_name)
+                        r.to_csv(save_path, mode='w')
+                        g.to_csv(save_path, mode='w')
+
+                        return img_name
+
+                    else:
+                        return 'NONE ' + img_name
+
+            except:
+                return 'ERROR: ' + img_name
+                # if self.nr_types is None:
+                #     mat_dict.pop("inst_type", None)
+
+                # mat_file_value = mat_dict['inst_centroid']
+                # mat_file_type = mat_dict['inst_type']
+                #
+                # red, green, blue, mat_file_value_green = anomaly_detection.cell_by_color(mat_file_value, mat_file_type)
+                #
+                # save_path = "%s/heat_map/%s.png" % (self.output_dir, img_name)
+                # heat_map.heat_map(srcimage, mat_file_value_green, save_path)
+
+                # if self.save_raw_map:
+                #     mat_dict["raw_map"] = pred_map
+                # save_path = "%s/mat/%s.mat" % (self.output_dir, img_name)
+                # sio.savemat(save_path, mat_dict)
+                #
+                # save_path = "%s/overlay/%s.png" % (self.output_dir, img_name)
+                # cv2.imwrite(save_path, cv2.cvtColor(overlaid_img, cv2.COLOR_RGB2BGR))
+                #
+                # if self.save_qupath:
+                #     nuc_val_list = list(inst_info_dict.values())
+                #     nuc_type_list = np.array([v["type"] for v in nuc_val_list])
+                #     nuc_coms_list = np.array([v["centroid"] for v in nuc_val_list])
+                #     save_path = "%s/qupath/%s.tsv" % (self.output_dir, img_name)
+                #     convert_format.to_qupath(
+                #         save_path, nuc_coms_list, nuc_type_list, self.type_info_dict
+                #     )
+                #
+                # save_path = "%s/json/%s.json" % (self.output_dir, img_name)
+                # self.__save_json(save_path, inst_info_dict, None)
+                #
+                # return img_name
 
         def detach_items_of_uid(items_list, uid, nr_expected_items):
             item_counter = 0
@@ -389,3 +509,4 @@ class InferManager(base.InferManager):
                         file_path = proc_callback(future.result())
                         log_info("Done Assembling %s" % file_path)
         return
+

@@ -111,6 +111,7 @@ def visualize_instances_dict(
     inst_rng_colors = inst_rng_colors.astype(np.uint8)
 
     for idx, [inst_id, inst_info] in enumerate(inst_dict.items()):
+        # if inst_info['type'] == 2:
         inst_contour = inst_info["contour"]
         if "type" in inst_info and type_colour is not None:
             inst_colour = type_colour[inst_info["type"]][1]
