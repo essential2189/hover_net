@@ -18,4 +18,6 @@ export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 ### experiment run
 
 
-nohup python3.7 run_infer.py --gpu=1 --type_info_path=type_info.json --batch_size=32 --model_mode=original --model_path=checkpoint/hovernet_original_kumar_notype_tf2pytorch.tar tile --input_dir=../datasets/image/CELL1101-1/ --output_dir=../output/CELL1101-1_original/ --draw_dot --save_raw_map>nohup2.out &
+
+
+nohup python3.7 run_infer.py --gpu=0 --nr_types=6 --type_info_path=type_info.json --batch_size=32 --model_mode=fast --model_path=checkpoint/hovernet_fast_pannuke_type_tf2pytorch.tar wsi --input_dir=../datasets/WSI/WSI/ --output_dir=../output/pannuke_wsi --input_mask_dir=../datasets/WSI/mask/ --save_thumb --save_mask>nohup2.out &

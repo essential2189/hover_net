@@ -131,10 +131,10 @@ def dbscan_filter(mat_path, output_path, image_path, kumar, eps, minsample):
 
             if cell_num >= 50:
                 if len(mat_file_value) > 0:
-                    len_predict = anomaly_detection.dbscan_green_red_nonePD(mat_file_value, eps, minsample)
+                    len_predict = anomaly_detection.dbscan_nonePD(mat_file_value, eps, minsample)
 
-                if len_predict > 1:
-                    cnt_list.append(mat)
+                    if len_predict > 1:
+                        cnt_list.append(mat)
 
                 # save_path = "%s/dbscan/%s.png" % (output_path, data_name)
                 # sns.pairplot(g, hue='predict', height=6, kind='scatter', diag_kind='hist')
@@ -145,9 +145,9 @@ def dbscan_filter(mat_path, output_path, image_path, kumar, eps, minsample):
                 # save_path = "%s/csv/%s.csv" % (output_path, data_name)
                 # g.to_csv(save_path, mode='w')
                 #
-                # save_path = "%s/overlay/%s.png" % (output_path, data_name)
-                # cv_image = cv2.imread(str(image_path) + str(image))
-                # cv2.imwrite(save_path, cv_image)
+                    save_path = "%s/overlay/%s.png" % (output_path, data_name)
+                    cv_image = cv2.imread(str(image_path) + str(image))
+                    cv2.imwrite(save_path, cv_image)
 
 
         # consep
@@ -157,15 +157,16 @@ def dbscan_filter(mat_path, output_path, image_path, kumar, eps, minsample):
 
             mat_file_value_green, mat_file_red, mat_file_blue, mat_file_y = anomaly_detection.cell_by_color(mat_file_value, mat_file_type)
 
-            mat_file_green_red_y = np.vstack([mat_file_red, mat_file_value_green, mat_file_y])
-            mat_file_green_red_y = mat_file_green_red_y[:, 1:3]
+            # mat_file_green_red_y = np.vstack([mat_file_red, mat_file_value_green, mat_file_y])
+            # mat_file_green_red_y = mat_file_green_red_y[:, 1:3]
+            mat_file_value_green = mat_file_value_green[:, 1:3]
 
             if cell_num >= 90:
-                if len(mat_file_green_red_y) > 0:
-                    len_predict_green_red_y = anomaly_detection.dbscan_green_red_nonePD(mat_file_green_red_y, eps, minsample)
+                if len(mat_file_value_green) > 0:
+                    len_predict_green_red_y = anomaly_detection.dbscan_nonePD(mat_file_value_green, eps, minsample)
 
-                if len_predict_green_red_y > 1:
-                    cnt_list.append(mat)
+                    if len_predict_green_red_y > 1:
+                        cnt_list.append(mat)
                     # print(len(cnt_list))
                     # save_path = "%s/gr_dbscan/%s.png" % (output_path, data_name)
                     # sns.pairplot(gr, hue='predict', height=6, kind='scatter', diag_kind='hist')
@@ -204,9 +205,9 @@ def folder(kumar, output_path):
 if __name__ == '__main__':
     start = time.time()
 
-    data = '20220107-08:59_1103-1'
-    img_data = '1103-1'
-    csv_data = '1103-1.csv'
+    data = '20220111-17:59_CELL1507-1'
+    img_data = 'CELL1507-1'
+    csv_data = 'CELL1507-1.csv'
     kumar = True
 
     if kumar:
@@ -220,7 +221,7 @@ if __name__ == '__main__':
         output_path = '../../output/filter/consep/' + data
         csv_path = '../../output/consep/' + data + '/' + csv_data
 
-    #folder(kumar, output_path)
+    folder(kumar, output_path)
 
     if kumar:
         eps = 66
@@ -229,18 +230,18 @@ if __name__ == '__main__':
         eps = 60
         minsample = 11
 
-    cnt_list = dbscan_filter(mat_path, output_path, image_path, kumar, eps, minsample)
+    # cnt_list = dbscan_filter(mat_path, output_path, image_path, kumar, eps, minsample)
+    #
+    # name_list, id_list = check_ann(cnt_list, csv_path)
+    #
+    #
+    # print(len(name_list), len(id_list))
+    # print(name_list)
 
-    name_list, id_list = check_ann(cnt_list, csv_path)
 
+    mat2vein(mat_path, image_path, img_data)
 
-    print(len(name_list), len(id_list))
-    print(name_list)
-
-
-    # mat2vein(mat_path, image_path, img_data)
-
-    # mat2cell(mat_path, image_path, img_data)
+    mat2cell(mat_path, image_path, img_data)
 
 
     end = time.time()

@@ -20,4 +20,4 @@ export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 
 
-nohup python3.7 run_infer.py --gpu=0,1 --nr_type=6 --type_info_path=type_info.json --batch_size=32 --model_mode=fast --model_path=checkpoint/hovernet_fast_pannuke_type_tf2pytorch.tar tile --input_dir=../datasets/image_part/CELL1101-1_8000/ --output_dir=../output/pannuke_wsi/`date +%Y%m%d-%H:%M`_CELL1101-1_8000 --draw_dot>nohup1.out &
+nohup python3.7 run_infer.py --gpu=1 --nr_type=6 --type_info_path=type_info.json --batch_size=32 --model_mode=fast --model_path=checkpoint/hovernet_fast_pannuke_type_tf2pytorch.tar tile --input_dir=../datasets/image500/1102-1/ --output_dir=../output/pannuke/`date +%Y%m%d-%H:%M`_1102-1 --draw_dot>nohup3.out &

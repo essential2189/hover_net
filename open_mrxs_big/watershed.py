@@ -33,14 +33,14 @@ def watershed(opencv_image):
 
     result = np.zeros(markers.shape)
     # for ins in tqdm(sort_label_list[:top_n_label]):
-    for ins in tqdm(sort_label_list):
-        result[markers == ins[0]] = 255
-    # ins = sort_label_list[0]
+    # for ins in tqdm(sort_label_list):
     # result[markers == ins[0]] = 255
+    ins = sort_label_list[0]
+    result[markers == ins[0]] = 255
 
-    # result2 = np.zeros(markers.shape)
-    # ins2 = sort_label_list[1]
-    # result2[markers == ins2[0]] = 255
+    result2 = np.zeros(markers.shape)
+    ins2 = sort_label_list[1]
+    result2[markers == ins2[0]] = 255
 
     print(result.shape)
     # print(result2.shape)
@@ -66,4 +66,4 @@ def watershed(opencv_image):
     # print(min_x, max_x, min_y, max_y)
     # roi_result = result[min_y:max_y, min_x:max_x]
 
-    return result
+    return result, result2

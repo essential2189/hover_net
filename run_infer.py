@@ -74,6 +74,7 @@ options:
 import torch
 import logging
 import os
+os.environ['OPENCV_IO_MAX_IMAGE_PIXELS'] = str(2**64)
 import copy
 from misc.utils import log_info
 from docopt import docopt

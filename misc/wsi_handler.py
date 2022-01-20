@@ -12,7 +12,7 @@ import openslide
 class FileHandler(object):
     def __init__(self):
         """The handler is responsible for storing the processed data, parsing
-        the metadata from original file, and reading it from storage. 
+        the metadata from original file, and reading it from storage.
         """
         self.metadata = {
             ("available_mag", None),
@@ -28,22 +28,19 @@ class FileHandler(object):
 
     def get_full_img(self, read_mag=None, read_mpp=None):
         """Only use `read_mag` or `read_mpp`, not both, prioritize `read_mpp`.
-
         `read_mpp` is in X, Y format
         """
         raise NotImplementedError
 
     def read_region(self, coords, size):
         """Must call `prepare_reading` before hand.
-
         Args:
-            coords (tuple): (dims_x, dims_y), 
-                          top left coordinates of image region at selected 
-                          `read_mag` or `read_mpp` from `prepare_reading` 
+            coords (tuple): (dims_x, dims_y),
+                          top left coordinates of image region at selected
+                          `read_mag` or `read_mpp` from `prepare_reading`
             size (tuple): (dims_x, dims_y)
-                          width and height of image region at selected 
-                          `read_mag` or `read_mpp` from `prepare_reading`       
-
+                          width and height of image region at selected
+                          `read_mag` or `read_mpp` from `prepare_reading`
         """
         raise NotImplementedError
 
@@ -58,7 +55,6 @@ class FileHandler(object):
 
     def prepare_reading(self, read_mag=None, read_mpp=None, cache_path=None):
         """Only use `read_mag` or `read_mpp`, not both, prioritize `read_mpp`.
-
         `read_mpp` is in X, Y format.
         """
         read_lv, scale_factor = self._get_read_info(
@@ -117,6 +113,7 @@ class OpenSlideHandler(FileHandler):
 
         wsi_properties = self.file_ptr.properties
         level_0_magnification = wsi_properties[openslide.PROPERTY_NAME_OBJECTIVE_POWER]
+        # level_0_magnification = self.file_ptr.level_dimensions
         level_0_magnification = float(level_0_magnification)
 
         downsample_level = self.file_ptr.level_downsamples
@@ -139,15 +136,13 @@ class OpenSlideHandler(FileHandler):
 
     def read_region(self, coords, size):
         """Must call `prepare_reading` before hand.
-
         Args:
-            coords (tuple): (dims_x, dims_y), 
-                          top left coordinates of image region at selected 
-                          `read_mag` or `read_mpp` from `prepare_reading` 
+            coords (tuple): (dims_x, dims_y),
+                          top left coordinates of image region at selected
+                          `read_mag` or `read_mpp` from `prepare_reading`
             size (tuple): (dims_x, dims_y)
-                          width and height of image region at selected 
-                          `read_mag` or `read_mpp` from `prepare_reading`       
-
+                          width and height of image region at selected
+                          `read_mag` or `read_mpp` from `prepare_reading`
         """
         if self.image_ptr is None:
             # convert coord from read lv to lv zero
@@ -166,7 +161,6 @@ class OpenSlideHandler(FileHandler):
 
     def get_full_img(self, read_mag=None, read_mpp=None):
         """Only use `read_mag` or `read_mpp`, not both, prioritize `read_mpp`.
-
         `read_mpp` is in X, Y format.
         """
 
@@ -192,7 +186,7 @@ class OpenSlideHandler(FileHandler):
 
 def get_file_handler(path, backend):
     if backend in [
-            '.svs', '.tif', 
+            '.svs', '.tif',
             '.vms', '.vmu', '.ndpi',
             '.scn', '.mrxs', '.tiff',
             '.svslide',
@@ -201,4 +195,3 @@ def get_file_handler(path, backend):
         return OpenSlideHandler(path)
     else:
         assert False, "Unknown WSI format `%s`" % backend
-

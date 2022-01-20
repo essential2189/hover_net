@@ -101,11 +101,10 @@ def dbscan_filter(mat_path, output_path, image_path, kumar, eps, minsample):
 
             if cell_num >= 50:
                 if len(mat_file_value) > 0:
-                    kmean = anomaly_detection.kmean_consep(mat_file_value)
-                    len_predict = anomaly_detection.dbscan_green_red_nonePD(mat_file_value, eps, minsample)
+                    len_predict = anomaly_detection.dbscan_nonePD(mat_file_value, eps, minsample)
 
-                if len_predict > 1:
-                    cnt_list.append(mat)
+                    if len_predict > 1:
+                        cnt_list.append(mat)
 
                 # save_path = "%s/dbscan/%s.png" % (output_path, data_name)
                 # sns.pairplot(g, hue='predict', height=6, kind='scatter', diag_kind='hist')
@@ -128,15 +127,16 @@ def dbscan_filter(mat_path, output_path, image_path, kumar, eps, minsample):
 
             mat_file_value_green, mat_file_red, mat_file_blue, mat_file_y = anomaly_detection.cell_by_color(mat_file_value, mat_file_type)
 
-            mat_file_green_red_y = np.vstack([mat_file_red, mat_file_value_green, mat_file_y])
+            mat_file_green_red_y = np.vstack([mat_file_value_green])
             mat_file_green_red_y = mat_file_green_red_y[:, 1:3]
 
-            if cell_num >= 90:
-                if len(mat_file_green_red_y) > 20:
-                    len_predict_green_red_y = anomaly_detection.dbscan_green_red_nonePD(mat_file_green_red_y, eps, minsample)
 
-                if len_predict_green_red_y > 1:
-                    cnt_list.append(mat)
+            if cell_num >= 90:
+                if len(mat_file_green_red_y) > 0:
+                    len_predict_green_red_y = anomaly_detection.dbscan_nonePD(mat_file_green_red_y, eps, minsample)
+
+                    if len_predict_green_red_y > 1:
+                        cnt_list.append(mat)
                     # print(len(cnt_list))
                     # save_path = "%s/gr_dbscan/%s.png" % (output_path, data_name)
                     # sns.pairplot(gr, hue='predict', height=6, kind='scatter', diag_kind='hist')
@@ -155,29 +155,12 @@ def dbscan_filter(mat_path, output_path, image_path, kumar, eps, minsample):
 
 
 
-def folder(kumar, output_path):
-    if kumar :
-        createFolder(output_path + '/dbscan')
-        createFolder(output_path + '/csv')
-        createFolder(output_path + '/overlay')
-    else :
-        # createFolder(output_path + '/g_dbscan')
-        # createFolder(output_path + '/g_csv')
-        # createFolder(output_path + '/g_overlay')
-        # createFolder(output_path + '/r_dbscan')
-        # createFolder(output_path + '/r_csv')
-        # createFolder(output_path + '/r_overlay')
-        createFolder(output_path + '/gr_dbscan')
-        createFolder(output_path + '/gr_csv')
-        createFolder(output_path + '/gr_overlay')
-
-
 def main(eps):
     global min, min_s, min_e
 
-    data = '20211224-23:48_CELL1105-1_500'
-    img_data = 'CELL1105-1'
-    csv_data = 'ann1105-1.csv'
+    data = '20220112-17:55_CELL1101-1'
+    img_data = 'CELL1101-1'
+    csv_data = 'ann1101-1.csv'
     kumar = False
 
     if kumar:
@@ -186,22 +169,19 @@ def main(eps):
         output_path = '../../output/filter/kumar/' + data
         csv_path = '../../output/kumar/' + data + '/' + csv_data
     else:
-        mat_path = '../../output/consep/' + data + '/mat/'
+        mat_path = '../../output/pannuke/' + data + '/mat/'
         image_path = '../../datasets/image500/' + img_data + '/'
-        output_path = '../../output/filter/consep/' + data
-        csv_path = '../../output/consep/' + data + '/' + csv_data
-
-    # folder(kumar, output_path)
+        output_path = '../../output/filter/pannuke/' + data
+        csv_path = '../../output/pannuke/' + data + '/' + csv_data
 
 
-    # for eps in tqdm(list_eps):
     for minsample in tqdm(list_minsample):
         cnt_list = dbscan_filter(mat_path, output_path, image_path, kumar, eps, minsample)
 
         try:
             name_list, id_list = check_ann(cnt_list, csv_path)
 
-            if len(id_list) == 0 and len(name_list) < 1000:
+            if len(id_list) == 0:
                 print('eps:', eps, ', min_sample:', minsample, ' -- ', len(name_list), len(id_list))
                 if len(name_list) < min.value:
                     min.value = len(name_list)
@@ -229,8 +209,8 @@ def init(arg1, arg2, arg3):
     min_e = arg3
 
 
-list_eps = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140]
-list_minsample = [2, 3, 4, 5, 6]
+list_eps = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
+list_minsample = [2, 3, 4, 5, 6, 7, 8]
 
 
 if __name__ == '__main__':
@@ -244,44 +224,9 @@ if __name__ == '__main__':
     pool.map(main, list_eps)
     pool.close()
     pool.join()
-    #
-    # data = '20211225-23:35_CELL1101-1_500'
-    # img_data = 'CELL1101-1'
-    # csv_data = 'ann1101-1.csv'
-    # kumar = False
-    #
-    # if kumar:
-    #     mat_path = '../../output/kumar/' + data + '/mat/'
-    #     image_path = '../../datasets/image500/' + img_data + '/'
-    #     output_path = '../../output/filter/kumar/' + data
-    #     csv_path = '../../output/kumar/' + data + '/' + csv_data
-    # else:
-    #     mat_path = '../../output/consep/' + data + '/mat/'
-    #     image_path = '../../datasets/image500/' + img_data + '/'
-    #     output_path = '../../output/filter/consep/' + data
-    #     csv_path = '../../output/consep/' + data + '/' + csv_data
-    #
-    # folder(kumar, output_path)
-    #
-    # list_eps = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
-    # list_minsample = [2, 3, 4, 5, 6, 7, 8]
-    # min = 9999
-    #
-    # for eps in tqdm(list_eps):
-    #     for minsample in list_minsample:
-    #         cnt_list = dbscan_filter(mat_path, output_path, image_path, kumar, eps, minsample)
-    #
-    #         name_list, id_list = check_ann(cnt_list, csv_path)
-    #
-    #         if len(name_list) <= min and len(id_list) == 0:
-    #             min = len(name_list)
 
-    # print(len(id_list))
-    # print(name_list)
-    # print(len(name_list))
-    # print(min)
+    print('eps:', min_e.value, ', min_sample:', min_s.value, ' -- ', min.value)
 
-    print(min_e.value, min_s.value, min.value)
 
     #mat2vein(mat_path, image_path)
     end = time.time()

@@ -10,6 +10,7 @@ import json
 import logging
 import math
 import os
+os.environ['OPENCV_IO_MAX_IMAGE_PIXELS'] = str(2**64)
 import pathlib
 import re
 import shutil
@@ -729,7 +730,7 @@ class InferManager(base.InferManager):
             if not os.path.exists(self.output_dir + "/mask/"):
                 rm_n_mkdir(self.output_dir + "/mask/")
 
-        wsi_path_list = glob.glob(self.input_dir + "/*")
+        wsi_path_list = glob.glob(self.input_dir + "/*.mrxs")
         wsi_path_list.sort()  # ensure ordering
         for wsi_path in wsi_path_list[:]:
             wsi_base_name = pathlib.Path(wsi_path).stem
