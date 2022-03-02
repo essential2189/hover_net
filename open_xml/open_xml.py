@@ -29,7 +29,7 @@ def createFolder(directory):
         print('Error: Creating directory. ' + directory)
 
 
-def get_xml(tree, img, data_name):
+def get_xml(tree, img, data_name, xx, yy):
     root = tree.getroot()
     destination = root.findall("destination/annotations/annotation")
 
@@ -56,19 +56,39 @@ def get_xml(tree, img, data_name):
         y_min = np.sort(point[:, 1], axis=0)[0]
         y_max = np.sort(point[:, 1], axis=0)[-1]
 
-        img_save = img[y_min:y_max, x_min:x_max]
+        while 1:
+            if y_max - y_min != 1000:
+                y_max += 0.5
+                y_min -= 0.5
+            if x_max - x_min != 1000:
+                x_max += 0.5
+                x_min -= 0.5
+
+            if y_max - y_min == 1000.0 and x_max - x_min == 1000.0:
+                print(y_max, y_min, x_max, x_min)
+                y_max = int(y_max * yy)
+                y_min = int(y_min * yy)
+                x_max = int(x_max * xx)
+                x_min = int(x_min * xx)
+                img_save = img[y_min:y_max, x_min:x_max]
+                break
 
         cv2.imwrite('/home/sjwang/biotox/datasets/mrxs_label/' + data_name + '/' + name_ + '_' + str(cnt) + '.png', img_save)
         cnt += 1
+
 
 def load_wsi(path):
     wsi = OpenSlide(path)
 
     level_dim = wsi.level_dimensions
-    x = level_dim[0][0]
-    y = level_dim[0][1]
+    x = level_dim[1][0]
+    y = level_dim[1][1]
 
-    img = wsi.read_region((0, 0), 0, (x, y))
+    xx = level_dim[1][0] / level_dim[0][0]
+    yy = level_dim[1][1] / level_dim[0][1]
+
+    img = wsi.read_region((0, 0), 1, (x, y))
+    print(xx, yy)
     print('mrxs load end')
 
     np_img = np.array(img)
@@ -78,7 +98,8 @@ def load_wsi(path):
 
     np_img = cv2.cvtColor(np_img, cv2.COLOR_RGBA2BGR)
 
-    return np_img
+    return np_img, xx, yy
+
 
 def main(path):
     print(path)
@@ -86,14 +107,14 @@ def main(path):
     data_name = get_data_name(path)
     createFolder('../../datasets/mrxs_label/' + data_name)
 
-    img = load_wsi(path)
+    img, xx, yy = load_wsi(path)
 
-    tree = elemTree.parse('/home/sjwang/biotox/datasets/mrxs_label/1101-1/1101-1.xml')
-    get_xml(tree, img, data_name)
+    tree = elemTree.parse('/home/sjwang/biotox/datasets/mrxs_label/1105-1/1105-1.xml')
+    get_xml(tree, img, data_name, xx, yy)
 
 
 if __name__ == '__main__':
     start = time.time()
-    main('../../datasets/mrxs_a/CELL1101-1.mrxs')
+    main('../../datasets/mrxs_a/CELL1105-1.mrxs')
     end = time.time()
     print(datetime.timedelta(seconds=end-start))

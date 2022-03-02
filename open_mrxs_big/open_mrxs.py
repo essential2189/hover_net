@@ -117,11 +117,6 @@ def main(path, crop):
 
     wsi = OpenSlide(path)
     print('open mrxs end')
-    # wsi_properties = wsi.properties
-    # level_0_magnification = wsi_properties[openslide.PROPERTY_NAME_OBJECTIVE_POWER]
-    # level_0_magnification = float(level_0_magnification)
-    # print(level_0_magnification)
-    # print(wsi_properties)
 
     level_dim = wsi.level_dimensions
     x = level_dim[0][0]
@@ -225,7 +220,7 @@ def main(path, crop):
 
 if __name__ == '__main__':
     start = time.time()
-    crop = 8000
+    crop = 2000
     main('../../datasets/mrxs_a/CELL1101-1.mrxs', crop)
     end = time.time()
     print(datetime.timedelta(seconds=end-start))

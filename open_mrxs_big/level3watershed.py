@@ -16,27 +16,12 @@ from open_mrxs import add_margin
 
 
 def min_image(img, level_1, level_2):
-    min_y = level_2
-    max_y = 0
-    min_x = level_1
-    max_x = 0
+    pos = np.where(img == 255)
 
-    print('cut min image start')
-    for y, ins in tqdm(enumerate(img)):
-        for x, val in enumerate(ins):
-            if val.any() != 0:
-                if min_x >= x:
-                    min_x = x
-                if max_x <= x:
-                    max_x = x
-
-                if min_y >= y:
-                    min_y = y
-                if max_y <= y:
-                    max_y = y
-
-    print(min_x, max_x, min_y, max_y)
-    print(img[min_y:max_y, min_x:max_x].shape)
+    min_x = min(pos[1])
+    min_y = min(pos[0])
+    max_x = max(pos[1])
+    max_y = max(pos[0])
 
     return img[min_y:max_y, min_x:max_x], min_x, max_x, min_y, max_y
 
@@ -92,11 +77,11 @@ def dim_3(path):
     min_y2 = int(min_y2 * (level_dim[0][1] / level_dim[5][1]))
     max_y2 = int(max_y2 * (level_dim[0][1] / level_dim[5][1]))
 
-    # img = wsi.read_region((min_x, min_y), 0, (max_x - min_x, max_y - min_y))
-    # img2 = wsi.read_region((min_x2, min_y2), 0, (max_x2 - min_x2, max_y2 - min_y2))
+    img = wsi.read_region((min_x, min_y), 2, (max_x - min_x, max_y - min_y))
+    img2 = wsi.read_region((min_x2, min_y2), 2, (max_x2 - min_x2, max_y2 - min_y2))
 
-    # img.save('../../datasets/image_part' + '/1.png', 'png')
-    # img2.save('../../datasets/image_part' + '/2.png', 'png')
+    img.save('../../datasets' + '/2.png', 'png')
+    img2.save('../../datasets' + '/3.png', 'png')
 
     return image, image2, min_x, max_x, min_y, max_y, min_x2, max_x2, min_y2, max_y2
 

@@ -27,9 +27,9 @@ def crop_image(level_1, level_2, image, data_name, crop, one):
 
             if avg < 255:
                 if one:
-                    cv2.imwrite('../../datasets/image_part/' + data_name + '_' + str(crop) + '/img_1_{}.png'.format(filename_cnt), img_crop)
+                    cv2.imwrite('../../datasets/image_part/' + data_name + '_' + str(crop) + '/img1_{}_({},{}).png'.format(filename_cnt, y, x), img_crop)
                 else :
-                    cv2.imwrite('../../datasets/image_part/' + data_name + '_' + str(crop) + '/img_2_{}.png'.format(filename_cnt), img_crop)
+                    cv2.imwrite('../../datasets/image_part/' + data_name + '_' + str(crop) + '/img2_{}_({},{}).png'.format(filename_cnt, y, x), img_crop)
                 filename_cnt += 1
 
             x += crop

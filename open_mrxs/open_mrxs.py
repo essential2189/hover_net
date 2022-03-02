@@ -92,7 +92,7 @@ def del_y_margin(y, crop):
 
 def get_data_name(path):
     image_path = path.split('/')
-    data_name = image_path[4].split('.')[0]
+    data_name = image_path[6].split('.')[0]
 
     return data_name
 
@@ -113,39 +113,37 @@ def main(path, crop):
 
     data_name = get_data_name(path)
 
-    createFolder('../../datasets/image' + str(crop) + '/' + data_name)
+    createFolder('../../datasets/image' + str(crop) + '/' + data_name +'/anomaly')
+    createFolder('../../datasets/image' + str(crop) + '/' + data_name +'/normal')
 
     wsi = OpenSlide(path)
     print('open mrxs end')
-    # wsi_properties = wsi.properties
-    # level_0_magnification = wsi_properties[openslide.PROPERTY_NAME_OBJECTIVE_POWER]
-    # level_0_magnification = float(level_0_magnification)
-    # print(level_0_magnification)
-    # print(wsi_properties)
+    print(wsi.level_downsamples)
 
     level_dim = wsi.level_dimensions
     x = level_dim[0][0]
     y = level_dim[0][1]
 
+    # img = wsi.read_region((0, 0), 0, (x, y))
+    # img.save('../../datasets/image' + str(crop) + '/'+ data_name+'.png', 'png', optimize=True)
+
     mask, min_x, max_x, min_y, max_y = level3watershed.watershed2mask(path, x)
-    # mask, mask2, min_x, max_x, min_y, max_y, min_x2, max_x2, min_y2, max_y2 = level3watershed.watershed2mask(path, x)
-    # print(min_x, max_x, min_y, max_y)
+
 
     img = wsi.read_region((min_x, min_y), 0, (max_x-min_x, max_y-min_y))
-    # img2 = wsi.read_region((min_x2, min_y2), 0, (max_x2 - min_x2, max_y2 - min_y2))
-
-    # print(img.size[0], img.size[1])
+    print(img.size[0], img.size[1])
     print('mrxs load end')
 
     img = np.array(img)
-    # img2 = np.array(img2)
+
+    img_resize = cv2.resize(img, dsize=(0, 0), fx=0.1, fy=0.1, interpolation=cv2.INTER_AREA)
+    cv2.imwrite('../../datasets/'+ data_name + '.png', img_resize)
+    del(img_resize)
 
     opencv_image = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
     del(img)
     print('image to cv2 end')
-    # opencv_image2 = cv2.cvtColor(img2, cv2.COLOR_RGBA2BGR)
-    # del (img2)
-    # print('image to cv2 end')
+
 
     mask = mask.astype(np.uint8)
     opencv_image = opencv_image.astype(np.uint8)
@@ -159,42 +157,45 @@ def main(path, crop):
 
     image_bitwise[mask == 0] = 255
 
-    # cv2.imwrite('../../datasets/' + '/image_bitwise.png', image_bitwise)
+    img_resize = cv2.resize(image_bitwise, dsize=(0, 0), fx=0.2, fy=0.2, interpolation=cv2.INTER_AREA)
+    cv2.imwrite('../../datasets/' + data_name + '.png', img_resize)
+    del (img_resize)
+    #
+    # del(mask)
+    # print('bitwise image white end')
+    #
+    # img = Image.fromarray(image_bitwise)
+    # print('cv2 to image end')
+    #
+    # x = img.size[0]
+    # y = img.size[1]
+    #
+    # x_x, x_ex, y_y, y_ex = cal_margin(x, y, crop)
+    # img = add_margin(img, 0, x_ex, y_ex, 0, (255, 255, 255))
+    # del(image_bitwise)
+    # print('image padding end')
+    # print(img.size)
+    # #img.save('../../datasets/image' + str(crop) + '/add_margin.png', 'png', optimize=True)
+    #
+    # x = img.size[0]
+    # y = img.size[1]
+    #
+    # crop_image.crop_image(x, y, img, data_name, crop, min_x, max_x, min_y, max_y)
+    #
+    # tile = crop_image.check_crop(x, y, img, crop)
+    # del(img)
+    # im_tile = concat_tile(tile)
+    # del(tile)
+    # cv2.imwrite('../../datasets/image'+str(crop)+'/'+data_name+'_opencv_concat_tile.jpg', im_tile)
 
-    del(mask)
-    print('bitwise image white end')
 
-    # image_bitwise = cv2.cvtColor(image_bitwise, cv2.COLOR_BGR2RGB)
-    img = Image.fromarray(image_bitwise)
-    print('cv2 to image end')
-
-    x = img.size[0]
-    y = img.size[1]
-
-    x_x, x_ex, y_y, y_ex = cal_margin(x, y, crop)
-    img = add_margin(img, 0, x_ex, y_ex, 0, (255, 255, 255))
-    del(image_bitwise)
-    print('image padding end')
-    print(img.size)
-    #img.save('../../datasets/image' + str(crop) + '/add_margin.png', 'png', optimize=True)
-
-    x = img.size[0]
-    y = img.size[1]
-
-    crop_image.crop_image(x, y, img, data_name, crop)
-
-    tile = crop_image.check_crop(x, y, img, crop)
-    del(img)
-    im_tile = concat_tile(tile)
-    del(tile)
-    cv2.imwrite('../../datasets/image'+str(crop)+'/'+data_name+'_opencv_concat_tile.jpg', im_tile)
-
-
+from glob import glob
 if __name__ == '__main__':
     start = time.time()
     #print(sys.argv[1])
     crop = 500
-    main('../../datasets/mrxs_label/1401-4.mrxs', crop)
+    for data in glob('/home/sjwang/biotox/datasets/mrxs3/*.mrxs'):
+        main(data, crop)
     end = time.time()
     print(datetime.timedelta(seconds=end-start))
 
